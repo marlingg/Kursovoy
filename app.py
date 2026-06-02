@@ -12,33 +12,46 @@ from datetime import datetime
 
 # ─── Конфігурація сторінки ───────────────────────────────────────────────────
 st.set_page_config(
-    page_title='Predictive Maintenance Dashboard',
-    page_icon='🔧',
-    layout='wide',
+    page_title='Predictive Maintenance System',
+        layout='wide',
     initial_sidebar_state='expanded'
 )
 
 # ─── CSS-стилі ───────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-    .main-header {
-        font-size: 2rem; font-weight: 700;
-        background: linear-gradient(90deg, #1a73e8, #0d47a1);
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .metric-card {
-        background: #f8f9fa; border-radius: 10px;
-        padding: 1rem; border-left: 4px solid #1a73e8;
-    }
-    .alert-critical { border-left: 4px solid #e53935 !important; background: #ffebee !important; }
-    .alert-warning  { border-left: 4px solid #fb8c00 !important; background: #fff3e0 !important; }
-    .alert-ok       { border-left: 4px solid #43a047 !important; background: #e8f5e9 !important; }
-    .stButton > button {
-        width: 100%; background: #1a73e8; color: white;
-        border-radius: 8px; border: none; padding: .6rem;
-        font-size: 1rem; font-weight: 600;
-    }
-    .stButton > button:hover { background: #1558b0; }
+.main-header{
+    font-size:36px;
+    font-weight:700;
+    color:#111827;
+    padding-bottom:10px;
+}
+.section-title{
+    font-size:22px;
+    font-weight:600;
+    color:#1f2937;
+}
+div[data-testid="stMetric"]{
+    border:1px solid #d1d5db;
+    border-radius:8px;
+    padding:10px;
+    background:white;
+}
+.stButton > button{
+    width:100%;
+    background:#1f2937;
+    color:white;
+    border:none;
+    border-radius:6px;
+    font-weight:600;
+    height:45px;
+}
+.stButton > button:hover{
+    background:#111827;
+}
+[data-testid="stSidebar"]{
+    border-right:1px solid #e5e7eb;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -103,52 +116,52 @@ def build_input_row(params: dict) -> pd.DataFrame:
 def risk_level(prob: float) -> tuple[str, str]:
     """Повертає (мітка, css-клас) для рівня ризику."""
     if prob >= 0.70:
-        return '🔴 Критичний', 'alert-critical'
+        return 'Високий', 'alert-critical'
     if prob >= 0.40:
-        return '🟡 Помірний', 'alert-warning'
-    return '🟢 Низький', 'alert-ok'
+        return 'Середній', 'alert-warning'
+    return 'Низький', 'alert-ok'
 
 
 def signal_status(value, high=None, low=None) -> str:
     if high is not None and value > high:
-        return '🔴 Перевищення'
+        return 'Перевищення'
     if low is not None and value < low:
-        return '🟡 Нижче норми'
-    return '🟢 Норма'
+        return 'Нижче допустимого рівня'
+    return 'Норма'
 
 
 # ─── Бічна панель (введення параметрів) ─────────────────────────────────────
-st.sidebar.markdown('## 🔧 Параметри обладнання')
+st.sidebar.markdown('## Параметри обладнання')
 st.sidebar.markdown('---')
 
-machine_id     = st.sidebar.selectbox('🆔 Machine ID', list(range(1, 51)), index=0)
+machine_id     = st.sidebar.selectbox('Обладнання', list(range(1, 51)), index=0)
 st.sidebar.markdown('**Сенсорні показники**')
-temperature    = st.sidebar.slider('🌡️ Температура (°C)',    40.0, 115.0, 75.0, 0.5)
-vibration      = st.sidebar.slider('📳 Вібрація (mm/s)',      0.0, 100.0, 30.0, 0.5)
-humidity       = st.sidebar.slider('💧 Вологість (%)',        10.0, 100.0, 55.0, 1.0)
-pressure       = st.sidebar.slider('🔩 Тиск (бар)',           0.5,  10.0,  4.0, 0.1)
-energy         = st.sidebar.slider('⚡ Спожита енергія (kW)',  0.0,  30.0, 10.0, 0.5)
+temperature    = st.sidebar.slider('Температура (°C)',    40.0, 115.0, 75.0, 0.5)
+vibration      = st.sidebar.slider('Вібрація (mm/s)',      0.0, 100.0, 30.0, 0.5)
+humidity       = st.sidebar.slider('Вологість (%)',        10.0, 100.0, 55.0, 1.0)
+pressure       = st.sidebar.slider('Тиск (бар)',           0.5,  10.0,  4.0, 0.1)
+energy         = st.sidebar.slider('Спожита енергія (kW)',  0.0,  30.0, 10.0, 0.5)
 
 st.sidebar.markdown('**Стан обладнання**')
-machine_status = st.sidebar.selectbox('⚙️ Статус машини', [0, 1, 2],
+machine_status = st.sidebar.selectbox('Статус машини', [0, 1, 2],
                                        format_func=lambda x: {0:'Зупинена', 1:'Активна', 2:'Режим тех. обсл.'}[x])
-anomaly_flag   = st.sidebar.checkbox('⚠️ Прапорець аномалії', value=False)
-pred_life      = st.sidebar.number_input('⏱️ Залишковий ресурс (год)', 0, 1000, 200, step=10)
-downtime_risk  = st.sidebar.slider('📉 Ризик простою (0–1)', 0.0, 1.0, 0.2, 0.01)
-failure_type   = st.sidebar.selectbox('🛠️ Тип відмови', FAILURE_TYPES)
+anomaly_flag   = st.sidebar.checkbox('Прапорець аномалії', value=False)
+pred_life      = st.sidebar.number_input('Залишковий ресурс (год)', 0, 1000, 200, step=10)
+downtime_risk  = st.sidebar.slider('Ризик простою (0–1)', 0.0, 1.0, 0.2, 0.01)
+failure_type   = st.sidebar.selectbox('Тип відмови', FAILURE_TYPES)
 
 st.sidebar.markdown('---')
-predict_btn = st.sidebar.button('🚀 Виконати прогноз')
+predict_btn = st.sidebar.button('Виконати прогноз')
 
 # ─── Головна панель ──────────────────────────────────────────────────────────
-st.markdown('<p class="main-header">🏭 Predictive Maintenance — IoT Dashboard</p>',
+st.markdown('<p class="main-header">Predictive Maintenance System</p>',
             unsafe_allow_html=True)
 st.markdown('Прогнозування потреби в технічному обслуговуванні виробничого обладнання на основі IoT-сенсорів')
 st.markdown('---')
 
 # ─── Вкладки інтерфейсу ──────────────────────────────────────────────────────
 tab_pred, tab_analysis, tab_info = st.tabs(
-    ['🎯 Прогноз', '📊 Аналіз параметрів', 'ℹ️ Про модель']
+    ['Прогнозування', 'Аналітика', 'Документація']
 )
 
 # ════════════════════════════════════════════════════════
@@ -159,7 +172,7 @@ with tab_pred:
         st.info('👈 Введіть параметри обладнання в бічній панелі та натисніть **«Виконати прогноз»**')
         col_a, col_b, col_c = st.columns(3)
         col_a.markdown('**Сервіс виконує:**')
-        col_a.markdown('- 🎯 Прогноз ймовірності обслуговування\n- 📊 Gauge-індикатор ризику\n- ⚠️ Таблиця сигналів')
+        col_a.markdown('- 🎯 Прогноз ймовірності обслуговування\n- Gauge-індикатор ризику\n- Таблиця сигналів')
         col_b.markdown('**Вхідні дані:**')
         col_b.markdown('- Температура, вібрація, вологість\n- Тиск, споживання енергії\n- Статус, аномалії, тип відмови')
         col_c.markdown('**Модель:**')
@@ -182,17 +195,17 @@ with tab_pred:
         col1, col2, col3, col4 = st.columns(4)
         with col1:
             st.metric(
-                '🔮 Прогноз',
+                'Статус обслуговування',
                 'ПОТРІБНЕ' if pred else 'НЕ ПОТРІБНЕ',
                 delta='Терміново!' if pred else 'Продовжити роботу',
                 delta_color='inverse'
             )
         with col2:
-            st.metric('📊 Ймовірність', f'{prob:.1%}')
+            st.metric('Ймовірність відмови', f'{prob:.1%}')
         with col3:
-            st.metric('⚠️ Рівень ризику', risk_lbl.split()[-1])
+            st.metric('Категорія ризику', risk_lbl.split()[-1])
         with col4:
-            st.metric('🆔 Machine ID', f'Машина №{machine_id}')
+            st.metric('Обладнання', f'Машина №{machine_id}')
 
         st.markdown('---')
 
@@ -229,33 +242,33 @@ with tab_pred:
 
         # ── Таблиця сигналів ───────────────────────────────────────────────
         with col_t:
-            st.markdown('#### 📋 Таблиця сигналів')
+            st.markdown('#### Таблиця сигналів')
             signals = pd.DataFrame([
-                {'Параметр': '🌡️ Температура',
+                {'Параметр': 'Температура',
                  'Значення': f'{temperature:.1f} °C',
                  'Норма': '40–90 °C',
                  'Статус': signal_status(temperature, high=90)},
-                {'Параметр': '📳 Вібрація',
+                {'Параметр': 'Вібрація',
                  'Значення': f'{vibration:.1f} mm/s',
                  'Норма': '0–70 mm/s',
                  'Статус': signal_status(vibration, high=70)},
-                {'Параметр': '🔩 Тиск',
+                {'Параметр': 'Тиск',
                  'Значення': f'{pressure:.2f} бар',
                  'Норма': '1.5–8 бар',
                  'Статус': signal_status(pressure, low=1.5)},
-                {'Параметр': '⚡ Енергія',
+                {'Параметр': 'Енергія',
                  'Значення': f'{energy:.1f} kW',
                  'Норма': '0–25 kW',
                  'Статус': signal_status(energy, high=25)},
-                {'Параметр': '⚠️ Аномалія',
+                {'Параметр': 'Аномалія',
                  'Значення': 'ТАК' if anomaly_flag else 'НІ',
                  'Норма': 'Немає',
                  'Статус': '🔴 Виявлено' if anomaly_flag else '🟢 Норма'},
-                {'Параметр': '📉 Ризик простою',
+                {'Параметр': 'Ризик простою',
                  'Значення': f'{downtime_risk:.2f}',
                  'Норма': '0–0.7',
                  'Статус': signal_status(downtime_risk, high=0.7)},
-                {'Параметр': '⏱️ Залишковий ресурс',
+                {'Параметр': 'Залишковий ресурс',
                  'Значення': f'{pred_life} год',
                  'Норма': '>50 год',
                  'Статус': signal_status(pred_life, low=50)},
@@ -264,7 +277,7 @@ with tab_pred:
 
         # ── Рекомендація ───────────────────────────────────────────────────
         st.markdown('---')
-        st.markdown('#### 💡 Рекомендація')
+        st.markdown('#### Рекомендації щодо технічного обслуговування')
         if prob >= 0.70:
             st.error(
                 f'**Негайне обслуговування!** Ймовірність відмови: **{prob:.1%}**. '
@@ -288,7 +301,7 @@ with tab_pred:
 # Вкладка 2 — Аналіз параметрів
 # ════════════════════════════════════════════════════════
 with tab_analysis:
-    st.markdown('### 📊 Візуалізація поточних параметрів відносно норм')
+    st.markdown('### Візуалізація поточних параметрів відносно норм')
 
     params_analysis = {
         'Температура (°C)':   (temperature,   40,  90,  115),
@@ -323,7 +336,7 @@ with tab_analysis:
 
     # Spider / Radar chart
     st.markdown('---')
-    st.markdown('### 🕸️ Радарна карта стану обладнання')
+    st.markdown('### Радарна карта стану обладнання')
     categories = ['Температура', 'Вібрація', 'Вологість', 'Тиск', 'Енергія', 'Ризик простою']
     norm_vals = [
         temperature / 115 * 100,
@@ -359,40 +372,40 @@ with tab_analysis:
 # Вкладка 3 — Про модель
 # ════════════════════════════════════════════════════════
 with tab_info:
-    st.markdown('### ℹ️ Інформація про модель та набори даних')
+    st.markdown('### Інформація про модель та набори даних')
 
     col_i1, col_i2 = st.columns(2)
     with col_i1:
         st.markdown("""
-**📦 Набори даних:**
+**Набори даних:**
 - Smart Manufacturing IoT-Cloud Monitoring Dataset (Kaggle, 2025-03-03)
 - Real-Time IoT-Driven Production System Dataset (Kaggle, 2025-03-10)
 - Загальний розмір після об'єднання: **102 460 записів**
 
-**🤖 Модель:**
+**Модель:**
 - Алгоритм: **RandomForestClassifier**
 - Кількість ознак: **21** (вихідні + rolling + lag + похідні)
 - Цільова змінна: `maintenance_required` (0/1)
 
-**📊 Метрики на тесті:**
+**Метрики на тесті:**
 - Accuracy ≈ **1.000**
 - ROC-AUC ≈ **1.000**
 - RMSE ≈ **0.000**
 """)
     with col_i2:
         st.markdown("""
-**🔑 Ключові ознаки (ТОП-5):**
+**Ключові ознаки (ТОП-5):**
 1. `machine_status` — статус машини (~35% важливості)
 2. `anomaly_flag` — прапорець аномалії (~16%)
 3. `predicted_remaining_life` — залишковий ресурс (~16%)
 4. `failure_type_enc` — тип відмови (~10%)
 5. `downtime_risk` — ризик простою (~10%)
 
-**🛠️ Технічний стек:**
+**Технічний стек:**
 - Python, Pandas, NumPy, Scikit-learn
 - XGBoost, LightGBM, Plotly, Streamlit
 
-**📁 Структура проєкту:**
+**Структура проєкту:**
 ```
 app.py                  ← вебсервіс (цей файл)
 model_artifacts.pkl     ← модель + артефакти
@@ -403,7 +416,7 @@ requirements.txt
 """)
 
     st.markdown('---')
-    st.markdown('**🔬 Схема попереднього оброблення:**')
+    st.markdown('**Схема попереднього оброблення:**')
     proc_steps = pd.DataFrame([
         {'Крок': '1. Нормалізація ID',    'Деталі': 'M001→1, M002→2 … числовий int64'},
         {'Крок': '2. Імпутація пропусків','Деталі': 'Медіана для числових; «Unknown» для failure_type'},
@@ -419,7 +432,7 @@ requirements.txt
 # ─── Footer ───────────────────────────────────────────────────────────────────
 st.markdown('---')
 st.markdown(
-    '<small>🏭 Predictive Maintenance IoT Dashboard | '
+    '<small>Predictive Maintenance IoT Dashboard | '
     'RandomForestClassifier | Streamlit</small>',
     unsafe_allow_html=True
 )
